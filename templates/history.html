@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>PhishDetector Pro - History</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='style.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>PhishDetector Pro</h1>
+      <p>Advanced security for safer browsing</p>
+    </header>
+
+    <nav>
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('home') }}#features">Features</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('whitelist') }}">Whitelist</a>
+      <a href="{{ url_for('home') }}#about">About</a>
+      <a href="#" id="faq-link">FAQ</a>
+    </nav>
+
+    <!-- History Section -->
+    <section id="history" class="features">
+      <div class="container">
+        <h2>Scan History</h2>
+
+        <div class="history-controls">
+          <form action="{{ url_for('history') }}" method="GET">
+            <input
+              type="text"
+              name="search"
+              placeholder="Search URLs..."
+              class="search-input"
+            />
+            <button type="submit" class="search-button">Search</button>
+          </form>
+        </div>
+
+        {% if history %}
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>URL</th>
+              <th>Status</th>
+              <th>SSL</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in history %}
+            <tr>
+              <td>{{ item.scan_date }}</td>
+              <td>{{ item.url }}</td>
+              <td>
+                <span
+                  class="badge badge-{% if item.status == 'safe' %}safe{% elif item.status == 'suspicious' %}warning{% else %}danger{% endif %}"
+                >
+                  {{ item.status|capitalize }}
+                </span>
+              </td>
+              <td>
+                {% if item.has_ssl %}Valid{% else %}Invalid or Missing{% endif
+                %}
+              </td>
+              <td>
+                <button onclick="window.open('{{ item.url }}')">Visit</button>
+                <button
+                  onclick="window.location.href='{{ url_for('remove_history', id=item.id) }}'"
+                >
+                  Remove
+                </button>
+                <button onclick="addToWhitelist('{{ item.url }}')">
+                  Add to Whitelist
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>No scan history available.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- FAQ Modal -->
+    <div id="faq-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-item">
+          <h3>How does PhishDetector work?</h3>
+          <p>
+            PhishDetector analyzes multiple factors including SSL certificate
+            validity, URL structure, redirects, and compares against our
+            database of known phishing sites.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>Is my data secure?</h3>
+          <p>
+            Yes, we don't store any personal information. URLs you scan are only
+            used to check against our database and are not shared with third
+            parties.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>What should I do if a website is flagged as suspicious?</h3>
+          <p>
+            We recommend avoiding entering any personal information on
+            suspicious websites. If you believe it's a false positive, you can
+            report it to us for review.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>Can I use PhishDetector on my mobile device?</h3>
+          <p>
+            Yes, PhishDetector is fully responsive and works on all devices
+            including smartphones and tablets.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 PhishDetector Pro. All rights reserved.</p>
+    </footer>
+
+    <script>
+      // Show modal when FAQ link is clicked
+      document.getElementById("faq-link").onclick = function () {
+        document.getElementById("faq-modal").style.display = "block";
+        return false;
+      };
+
+      // Close modal when close button is clicked
+      document.getElementsByClassName("close")[0].onclick = function () {
+        document.getElementById("faq-modal").style.display = "none";
+      };
+
+      // Close modal when clicking outside of it
+      window.onclick = function (event) {
+        if (event.target == document.getElementById("faq-modal")) {
+          document.getElementById("faq-modal").style.display = "none";
+        }
+      };
+
+      // Add to whitelist functionality
+      function addToWhitelist(url) {
+        fetch("/add_whitelist_ajax", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: "url=" + encodeURIComponent(url),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert(`Added ${url} to whitelist`);
+            } else {
+              alert(`${url} is already in your whitelist`);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Failed to add to whitelist");
+          });
+      }
+    </script>
+  </body>
+</html>

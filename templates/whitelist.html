@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>PhishDetector Pro - Whitelist</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='style.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>PhishDetector Pro</h1>
+      <p>Advanced security for safer browsing</p>
+    </header>
+
+    <nav>
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('home') }}#features">Features</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('whitelist') }}">Whitelist</a>
+      <a href="{{ url_for('home') }}#about">About</a>
+      <a href="#" id="faq-link">FAQ</a>
+    </nav>
+
+    <!-- Whitelist Section -->
+    <section id="whitelist" class="features">
+      <div class="container">
+        <h2>Trusted Website Whitelist</h2>
+
+        <div class="whitelist-form">
+          <form action="{{ url_for('add_whitelist') }}" method="POST">
+            <input
+              type="url"
+              name="url"
+              placeholder="Enter website URL to add to whitelist"
+              required
+            />
+            <button type="submit">Add to Whitelist</button>
+          </form>
+        </div>
+
+        {% if whitelist %}
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date Added</th>
+              <th>URL</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in whitelist %}
+            <tr>
+              <td>{{ item.date_added }}</td>
+              <td>{{ item.url }}</td>
+              <td>
+                <button onclick="window.open('{{ item.url }}')">Visit</button>
+                <button
+                  onclick="window.location.href='{{ url_for('remove_whitelist', id=item.id) }}'"
+                >
+                  Remove
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>No websites in whitelist.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- FAQ Modal -->
+    <div id="faq-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-item">
+          <h3>How does PhishDetector work?</h3>
+          <p>
+            PhishDetector analyzes multiple factors including domain age, SSL
+            certificate validity, URL structure, redirects, and compares against
+            our database of known phishing sites.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>Is my data secure?</h3>
+          <p>
+            Yes, we don't store any personal information. URLs you scan are only
+            used to check against our database and are not shared with third
+            parties.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>What should I do if a website is flagged as suspicious?</h3>
+          <p>
+            We recommend avoiding entering any personal information on
+            suspicious websites. If you believe it's a false positive, you can
+            report it to us for review.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>Can I use PhishDetector on my mobile device?</h3>
+          <p>
+            Yes, PhishDetector is fully responsive and works on all devices
+            including smartphones and tablets.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 PhishDetector Pro. All rights reserved.</p>
+    </footer>
+
+    <script>
+      // Show modal when FAQ link is clicked
+      document.getElementById("faq-link").onclick = function () {
+        document.getElementById("faq-modal").style.display = "block";
+        return false;
+      };
+
+      // Close modal when close button is clicked
+      document.getElementsByClassName("close")[0].onclick = function () {
+        document.getElementById("faq-modal").style.display = "none";
+      };
+
+      // Close modal when clicking outside of it
+      window.onclick = function (event) {
+        if (event.target == document.getElementById("faq-modal")) {
+          document.getElementById("faq-modal").style.display = "none";
+        }
+      };
+    </script>
+  </body>
+</html>

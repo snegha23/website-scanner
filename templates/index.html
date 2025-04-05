@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>PhishDetector Pro</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='style.css') }}"
+      rel="stylesheet"
+    />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  </head>
+
+  <body>
+    <header>
+      <h1>WEBSITE VULNERABILITY SCANNER</h1>
+      <p>Advanced security for safer browsing</p>
+      <div id="user-info" class="user-info" style="display: none;">
+        <span>Welcome, <span id="user-email"></span></span>
+        <button id="logout-btn" class="logout-btn">Logout</button>
+      </div>
+    </header>
+
+    <nav>
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="#features">Features</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('whitelist') }}">Whitelist</a>
+      <a href="#about">About</a>
+      <a href="#" id="faq-link">FAQ</a>
+    </nav>
+
+    <!-- Auth Container - Shows before user is logged in -->
+    <section id="auth-container" class="auth-container">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Login</button>
+        <button class="auth-tab" data-tab="signup">Sign Up</button>
+      </div>
+      
+      <div class="auth-forms">
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form active">
+          <h2>Login to continue</h2>
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" required placeholder="Enter your email">
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" required placeholder="Enter your password">
+          </div>
+          <div class="form-group">
+            <button type="submit" class="auth-button">Login</button>
+          </div>
+          <div id="login-error" class="error-message"></div>
+          <div class="reset-password">
+            <a href="#" id="forgot-password">Forgot Password?</a>
+          </div>
+        </form>
+        
+        <!-- Sign Up Form -->
+        <form id="signup-form" class="auth-form">
+          <h2>Create an account</h2>
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" required placeholder="Enter your email">
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" required placeholder="Create a password (min. 6 characters)">
+          </div>
+          <div class="form-group">
+            <label for="signup-confirm-password">Confirm Password</label>
+            <input type="password" id="signup-confirm-password" required placeholder="Confirm your password">
+          </div>
+          <div class="form-group">
+            <button type="submit" class="auth-button">Sign Up</button>
+          </div>
+          <div id="signup-error" class="error-message"></div>
+        </form>
+        
+        <!-- Password Reset Form -->
+        <form id="reset-form" class="auth-form">
+          <h2>Reset Password</h2>
+          <div class="form-group">
+            <label for="reset-email">Email</label>
+            <input type="email" id="reset-email" required placeholder="Enter your email">
+          </div>
+          <div class="form-group">
+            <button type="submit" class="auth-button">Send Reset Link</button>
+          </div>
+          <div id="reset-message" class="message"></div>
+          <div class="back-to-login">
+            <a href="#" id="back-to-login">Back to Login</a>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Main Content - Hidden until user is logged in -->
+    <div id="main-content" style="display: none;">
+      <!-- Hero Section -->
+      <section id="hero" class="d-flex align-items-center">
+        <div
+          class="container d-flex flex-column align-items-center justify-content-center"
+        >
+          <h1>FAKE WEBSITE DETECTION</h1>
+          <h2>Protect yourself from phishing attacks</h2>
+
+          <div class="tab-content active" id="single-scan">
+            <form action="/result" method="POST" role="form" class="form">
+              <div class="row no-gutters justify-content-center">
+                <div class="col-md-6 form-group pr-md-1">
+                  <input
+                    type="url"
+                    name="name"
+                    class="form-control"
+                    id="name"
+                    placeholder="Enter a URL link in format http or https"
+                    required
+                  />
+                  <input type="hidden" name="user_email" id="user-email-input" />
+                </div>
+              </div>
+              <div class="text-center">
+                <button type="submit">Scan URL</button>
+              </div>
+              {% if name %}
+              <div class="result-container">
+                <b><p>{{name[0]}}</p></b>
+                <h2 style="color: {{ 'green' if name[1] == 'safe' else 'orange' if name[1] == 'suspicious' else 'red' }};">
+                  Website is <span class="result-status">{{name[1]}}</span> to use
+                </h2>
+                <div class="result-details">
+                  <h3>Scan Details</h3>
+                  <div class="detail-item">
+                    <span>SSL Certificate:</span> {% if name[3] %}Valid{% else
+                    %}Invalid or Missing{% endif %}
+                  </div>
+                  <div class="detail-item">
+                    <span>Domain Reputation:</span> {% if name[3] %}Good{% else
+                    %}Questionable{% endif %}
+                  </div>
+                </div>
+
+                {% if not name[3] %}
+                <div class="warning-message">
+                  <i class="fas fa-exclamation-triangle"></i> Warning: This
+                  website shows signs of being a phishing attempt. Proceed with
+                  extreme caution.
+                </div>
+                {% endif %}
+
+                <div style="margin-top: 20px">
+                  {% if name[3] %}
+                  <button
+                    class="button1"
+                    onclick="window.open('{{name[0]}}')"
+                    target="_blank"
+                  >
+                    {{name[2]}}
+                  </button>
+                  {% else %}
+                  <button
+                    class="button2"
+                    onclick="window.open('{{name[0]}}')"
+                    target="_blank"
+                  >
+                    {{name[2]}}
+                  </button>
+                  {% endif %}
+                  <button class="button1" onclick="addToWhitelist('{{name[0]}}')">
+                    Add to Whitelist
+                  </button>
+                </div>
+              </div>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section id="features" class="features">
+        <div class="container">
+          <h2>Our Features</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <h3>Real-time Scanning</h3>
+              <p>
+                Check websites for phishing indicators in real-time before you
+                visit them
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-history"></i>
+              </div>
+              <h3>Scan History</h3>
+              <p>
+                Keep track of all websites you've scanned for future reference
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-list"></i>
+              </div>
+              <h3>Custom Whitelist</h3>
+              <p>Add trusted websites to your whitelist for quick access</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <h3>Fraud Detection</h3>
+              <p>
+                Advanced algorithms to detect fraudulent websites and phishing
+                attempts
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-file-alt"></i>
+              </div>
+              <h3>Detailed Reports</h3>
+              <p>
+                Get comprehensive reports on why a website was flagged as
+                suspicious
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-users"></i>
+              </div>
+              <h3>Community Reports</h3>
+              <p>
+                Benefit from reports submitted by other users in our community
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section id="about" class="features">
+        <div class="container">
+          <h2>About Us</h2>
+          <div style="text-align: center; max-width: 800px; margin: 0 auto">
+            <p>
+              PhishDetector Pro is a cutting-edge tool designed to protect users
+              from phishing attacks and fraudulent websites. Our advanced
+              algorithms analyze multiple factors to determine whether a website
+              is legitimate or potentially harmful.
+            </p>
+            <p>
+              With the rise of sophisticated phishing attacks, it's more important
+              than ever to verify the safety of websites before providing personal
+              information or credentials. PhishDetector Pro gives you peace of
+              mind by checking websites against our comprehensive database and
+              analyzing various security indicators.
+            </p>
+            <p>Stay safe online with PhishDetector Pro!</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- FAQ Modal -->
+    <div id="faq-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-item">
+          <h3>How does PhishDetector work?</h3>
+          <p>
+            PhishDetector analyzes multiple factors including domain age, SSL
+            certificate validity, URL structure, redirects, and compares against
+            our database of known phishing sites.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>Is my data secure?</h3>
+          <p>
+            Yes, we don't store any personal information. URLs you scan are only
+            used to check against our database and are not shared with third
+            parties.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>What should I do if a website is flagged as suspicious?</h3>
+          <p>
+            We recommend avoiding entering any personal information on
+            suspicious websites. If you believe it's a false positive, you can
+            report it to us for review.
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>Can I use PhishDetector on my mobile device?</h3>
+          <p>
+            Yes, PhishDetector is fully responsive and works on all devices
+            including smartphones and tablets.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 PhishDetector Pro. All rights reserved.</p>
+    </footer>
+
+    <script>
+      // Firebase configuration
+      // You will need to replace these values with your actual Firebase project config
+      const firebaseConfig = {
+        apiKey: "AIzaSyB-lXpk8rRB214GUD7INSrAPPN6Phke4WE",
+        authDomain: "login-form-53b36.firebaseapp.com",
+        projectId: "login-form-53b36",
+        storageBucket: "login-form-53b36.firebasestorage.app",
+        messagingSenderId: "499511871011",
+        appId: "1:499511871011:web:b342632d7b378a0b1d9396",
+      };
+      
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      
+      // Auth elements
+      const authContainer = document.getElementById('auth-container');
+      const mainContent = document.getElementById('main-content');
+      const userInfo = document.getElementById('user-info');
+      const userEmail = document.getElementById('user-email');
+      const userEmailInput = document.getElementById('user-email-input');
+      const logoutBtn = document.getElementById('logout-btn');
+      
+      // Form elements
+      const loginForm = document.getElementById('login-form');
+      const signupForm = document.getElementById('signup-form');
+      const resetForm = document.getElementById('reset-form');
+      const authTabs = document.querySelectorAll('.auth-tab');
+      const forgotPassword = document.getElementById('forgot-password');
+      const backToLogin = document.getElementById('back-to-login');
+      
+      // Error/message elements
+      const loginError = document.getElementById('login-error');
+      const signupError = document.getElementById('signup-error');
+      const resetMessage = document.getElementById('reset-message');
+      
+      // Tab switching
+      authTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Remove active class from all tabs and forms
+          document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+          
+          // Add active class to clicked tab
+          tab.classList.add('active');
+          
+          // Show corresponding form
+          const formId = tab.getAttribute('data-tab') + '-form';
+          document.getElementById(formId).classList.add('active');
+          
+          // Clear error messages
+          loginError.textContent = '';
+          signupError.textContent = '';
+        });
+      });
+      
+      // Forgot password link
+      forgotPassword.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        resetForm.classList.add('active');
+      });
+      
+      // Back to login link
+      backToLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        loginForm.classList.add('active');
+        resetMessage.textContent = '';
+      });
+      
+      // Login form submission
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        
+        loginError.textContent = '';
+        
+        firebase.auth().signInWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            // User signed in successfully
+            loginForm.reset();
+          })
+          .catch((error) => {
+            // Handle errors
+            loginError.textContent = error.message;
+          });
+      });
+      
+      // Signup form submission
+      signupForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        const confirmPassword = document.getElementById('signup-confirm-password').value;
+        
+        signupError.textContent = '';
+        
+        // Check if passwords match
+        if (password !== confirmPassword) {
+          signupError.textContent = 'Passwords do not match.';
+          return;
+        }
+        
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            // User created successfully
+            signupForm.reset();
+          })
+          .catch((error) => {
+            // Handle errors
+            signupError.textContent = error.message;
+          });
+      });
+      
+      // Password reset form submission
+      resetForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('reset-email').value;
+        
+        resetMessage.textContent = '';
+        
+        firebase.auth().sendPasswordResetEmail(email)
+          .then(() => {
+            resetMessage.textContent = 'Password reset email sent. Check your inbox.';
+            resetMessage.style.color = 'green';
+            resetForm.reset();
+          })
+          .catch((error) => {
+            resetMessage.textContent = error.message;
+            resetMessage.style.color = 'red';
+          });
+      });
+      
+      // Logout button
+      logoutBtn.addEventListener('click', () => {
+        firebase.auth().signOut();
+      });
+      
+      // Auth state observer
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          // User is signed in
+          userEmail.textContent = user.email;
+          userEmailInput.value = user.email;
+          authContainer.style.display = 'none';
+          mainContent.style.display = 'block';
+          userInfo.style.display = 'block';
+        } else {
+          // User is signed out
+          authContainer.style.display = 'block';
+          mainContent.style.display = 'none';
+          userInfo.style.display = 'none';
+        }
+      });
+      
+      // Show modal when FAQ link is clicked
+      document.getElementById("faq-link").onclick = function () {
+        document.getElementById("faq-modal").style.display = "block";
+        return false;
+      };
+
+      // Close modal when close button is clicked
+      document.getElementsByClassName("close")[0].onclick = function () {
+        document.getElementById("faq-modal").style.display = "none";
+      };
+
+      // Close modal when clicking outside of it
+      window.onclick = function (event) {
+        if (event.target == document.getElementById("faq-modal")) {
+          document.getElementById("faq-modal").style.display = "none";
+        }
+      };
+
+      // Add to whitelist functionality
+      function addToWhitelist(url) {
+        fetch("/add_whitelist_ajax", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: "url=" + encodeURIComponent(url),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert(`Added ${url} to whitelist`);
+            } else {
+              alert(`${url} is already in your whitelist`);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Failed to add to whitelist");
+          });
+      }
+    </script>
+  </body>
+</html>
